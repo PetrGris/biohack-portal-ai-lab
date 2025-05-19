@@ -10,6 +10,7 @@ import MyProtocols from "./pages/MyProtocols";
 import Library from "./pages/Library";
 import Elements from "./pages/Elements";
 import Rating from "./pages/Rating";
+import ProtocolDetail from "./pages/ProtocolDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/library" element={<Library />} />
           <Route path="/elements" element={<Elements />} />
           <Route path="/rating" element={<Rating />} />
+          <Route path="/protocol/:id" element={<ProtocolDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

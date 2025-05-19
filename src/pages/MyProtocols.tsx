@@ -13,6 +13,7 @@ const MyProtocols = () => {
 
   const myProtocols = [
     {
+      id: "morning-ritual",
       title: "Утренний ритуал для продуктивности",
       description: "Персональный протокол для максимальной энергии и концентрации в первой половине дня.",
       author: "Я",
@@ -25,6 +26,7 @@ const MyProtocols = () => {
       lastUpdated: "Вчера"
     },
     {
+      id: "sleep-optimization",
       title: "Оптимизация сна (форк)",
       description: "Адаптированный протокол для глубокого сна и быстрого засыпания с учетом моих особенностей.",
       author: "Я (форк от Алексей К.)",
@@ -37,6 +39,7 @@ const MyProtocols = () => {
       lastUpdated: "3 дня назад"
     },
     {
+      id: "vitamin-d",
       title: "Протокол микродозинга витамина D",
       description: "Экспериментальный протокол с ежедневным приемом небольших доз витамина D для улучшения иммунитета.",
       author: "Я",
@@ -49,6 +52,7 @@ const MyProtocols = () => {
       lastUpdated: "2 недели назад"
     },
     {
+      id: "cognitive-optimization",
       title: "Когнитивная оптимизация",
       description: "Комплексный протокол для улучшения памяти и ментальной энергии с использованием нутрицевтиков.",
       author: "Я (форк от Мария Л.)",
@@ -84,8 +88,8 @@ const MyProtocols = () => {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
-            <Tabs defaultValue="all" className="w-full">
+          <Tabs defaultValue="all" className="w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
               <TabsList className="w-full sm:w-auto">
                 <TabsTrigger value="all">Все</TabsTrigger>
                 <TabsTrigger value="active">Активные</TabsTrigger>
@@ -109,10 +113,26 @@ const MyProtocols = () => {
                   Сортировка
                 </Button>
               </div>
-              
-              <TabsContent value="all" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myProtocols.map((protocol, index) => (
+            </div>
+            
+            <TabsContent value="all" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myProtocols.map((protocol, index) => (
+                  <div key={index} className="relative">
+                    <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
+                      {protocol.status}
+                    </div>
+                    <ProtocolCard {...protocol} />
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="active">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myProtocols
+                  .filter((protocol) => protocol.status === "Активен")
+                  .map((protocol, index) => (
                     <div key={index} className="relative">
                       <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
                         {protocol.status}
@@ -120,70 +140,54 @@ const MyProtocols = () => {
                       <ProtocolCard {...protocol} />
                     </div>
                   ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="active">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myProtocols
-                    .filter((protocol) => protocol.status === "Активен")
-                    .map((protocol, index) => (
-                      <div key={index} className="relative">
-                        <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                          {protocol.status}
-                        </div>
-                        <ProtocolCard {...protocol} />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="draft">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myProtocols
+                  .filter((protocol) => protocol.status === "Черновик")
+                  .map((protocol, index) => (
+                    <div key={index} className="relative">
+                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
+                        {protocol.status}
                       </div>
-                    ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="draft">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myProtocols
-                    .filter((protocol) => protocol.status === "Черновик")
-                    .map((protocol, index) => (
-                      <div key={index} className="relative">
-                        <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                          {protocol.status}
-                        </div>
-                        <ProtocolCard {...protocol} />
+                      <ProtocolCard {...protocol} />
+                    </div>
+                  ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="completed">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myProtocols
+                  .filter((protocol) => protocol.status === "Завершен")
+                  .map((protocol, index) => (
+                    <div key={index} className="relative">
+                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
+                        {protocol.status}
                       </div>
-                    ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="completed">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myProtocols
-                    .filter((protocol) => protocol.status === "Завершен")
-                    .map((protocol, index) => (
-                      <div key={index} className="relative">
-                        <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                          {protocol.status}
-                        </div>
-                        <ProtocolCard {...protocol} />
+                      <ProtocolCard {...protocol} />
+                    </div>
+                  ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="forked">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myProtocols
+                  .filter((protocol) => protocol.author.includes("форк"))
+                  .map((protocol, index) => (
+                    <div key={index} className="relative">
+                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
+                        {protocol.status}
                       </div>
-                    ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="forked">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myProtocols
-                    .filter((protocol) => protocol.author.includes("форк"))
-                    .map((protocol, index) => (
-                      <div key={index} className="relative">
-                        <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                          {protocol.status}
-                        </div>
-                        <ProtocolCard {...protocol} />
-                      </div>
-                    ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+                      <ProtocolCard {...protocol} />
+                    </div>
+                  ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       
