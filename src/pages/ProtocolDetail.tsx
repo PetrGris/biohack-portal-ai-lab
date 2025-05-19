@@ -4,7 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -15,6 +14,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Star,
   GitBranch,
   Clock,
@@ -23,6 +31,7 @@ import {
   Plus,
   Trash2,
   Copy,
+  FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ElementCard from "@/components/ElementCard";
@@ -194,8 +203,10 @@ const ProtocolDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedElement, setSelectedElement] = useState<number | null>(null);
+  const [isElementDetailOpen, setIsElementDetailOpen] = useState(false);
+  const [currentElement, setCurrentElement] = useState<any>(null);
   
   // Find the protocol by ID
   const protocol = protocolsData.find(p => p.id === id);
@@ -239,7 +250,7 @@ const ProtocolDetail = () => {
 
   const handleDeleteElement = (elementId: number) => {
     setSelectedElement(elementId);
-    setIsDialogOpen(true);
+    setIsDeleteDialogOpen(true);
   };
 
   const confirmDeleteElement = () => {
@@ -247,7 +258,12 @@ const ProtocolDetail = () => {
       title: "Элемент удален",
       description: `Элемент успешно удален из протокола`,
     });
-    setIsDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+  };
+  
+  const handleViewElement = (element: any) => {
+    setCurrentElement(element);
+    setIsElementDetailOpen(true);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -331,29 +347,61 @@ const ProtocolDetail = () => {
             </div>
             
             {protocol.elements.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {protocol.elements.map((element) => (
-                  <div key={element.id} className="relative">
-                    <div className="absolute top-3 right-3 z-10 flex space-x-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                        onClick={() => handleDeleteElement(element.id)}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableCaption>Список шагов протокола {protocol.title}</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">№</TableHead>
+                      <TableHead>Название</TableHead>
+                      <TableHead className="max-w-xs">Описание</TableHead>
+                      <TableHead>Частота</TableHead>
+                      <TableHead>Время</TableHead>
+                      <TableHead>Сложность</TableHead>
+                      <TableHead className="text-right">Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {protocol.elements.map((element, index) => (
+                      <TableRow 
+                        key={element.id} 
+                        className="cursor-pointer"
+                        onClick={() => handleViewElement(element)}
                       >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                      >
-                        <Copy className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-                    <ElementCard {...element} />
-                  </div>
-                ))}
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>{element.title}</TableCell>
+                        <TableCell className="max-w-xs truncate">{element.description}</TableCell>
+                        <TableCell>{element.frequency}</TableCell>
+                        <TableCell>{element.time}</TableCell>
+                        <TableCell className={getDifficultyColor(element.difficulty)}>{element.difficulty}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteElement(element.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewElement(element);
+                              }}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
               <div className="text-center p-8 border border-dashed rounded-lg">
@@ -368,7 +416,8 @@ const ProtocolDetail = () => {
         </div>
       </main>
       
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Delete element confirmation dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Удалить элемент?</DialogTitle>
@@ -377,8 +426,61 @@ const ProtocolDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Отмена</Button>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Отмена</Button>
             <Button variant="destructive" onClick={confirmDeleteElement}>Удалить</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Element detail dialog */}
+      <Dialog open={isElementDetailOpen} onOpenChange={setIsElementDetailOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{currentElement?.title}</DialogTitle>
+            <DialogDescription>
+              Детальная информация об элементе протокола
+            </DialogDescription>
+          </DialogHeader>
+          
+          {currentElement && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">Описание</h4>
+                <p>{currentElement.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Категория</h4>
+                  <p>{currentElement.category}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Сложность</h4>
+                  <p className={getDifficultyColor(currentElement.difficulty)}>{currentElement.difficulty}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Частота</h4>
+                  <p>{currentElement.frequency}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Время</h4>
+                  <p>{currentElement.time}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Популярность</h4>
+                  <p>{currentElement.popularity}%</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Научная база</h4>
+                  <p>{currentElement.scienceRating} / 5</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsElementDetailOpen(false)}>Закрыть</Button>
+            <Button>Добавить в мой протокол</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
