@@ -42,9 +42,15 @@ const ProtocolCard = ({
     }
   };
 
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Share functionality would go here
+    navigator.clipboard.writeText(window.location.origin + `/protocol/${id}`);
+  };
+
   return (
     <Link to={`/protocol/${id}`} className="block">
-      <div className={cn("protocol-card flex flex-col", className)}>
+      <div className={cn("protocol-card p-5 border border-border rounded-lg hover:shadow-md transition-all bg-card flex flex-col h-full", className)}>
         <div className="flex items-start justify-between mb-2">
           <div>
             <div className="inline-block px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary mb-2">
@@ -52,7 +58,7 @@ const ProtocolCard = ({
             </div>
             <h3 className="font-bold text-lg">{title}</h3>
           </div>
-          <Button variant="ghost" size="icon" onClick={(e) => e.preventDefault()}>
+          <Button variant="ghost" size="icon" onClick={handleShare}>
             <Share2 className="h-4 w-4" />
           </Button>
         </div>

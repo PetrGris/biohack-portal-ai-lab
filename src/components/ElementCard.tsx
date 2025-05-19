@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Calendar, TrendingUp, Plus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface ElementCardProps {
   id: number;
@@ -16,6 +17,7 @@ interface ElementCardProps {
   time: string;
   frequency: string;
   className?: string;
+  children?: ReactNode;
 }
 
 const ElementCard = ({
@@ -28,6 +30,7 @@ const ElementCard = ({
   time,
   frequency,
   className,
+  children,
 }: ElementCardProps) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -86,10 +89,12 @@ const ElementCard = ({
         <div className={cn("text-sm font-medium", getDifficultyColor(difficulty))}>
           {difficulty}
         </div>
-        <Button variant="outline" size="sm" className="flex items-center space-x-1">
-          <Plus className="h-3 w-3" />
-          <span>Добавить</span>
-        </Button>
+        {children || (
+          <Button variant="outline" size="sm" className="flex items-center space-x-1">
+            <Plus className="h-3 w-3" />
+            <span>Добавить</span>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

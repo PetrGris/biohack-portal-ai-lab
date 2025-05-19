@@ -30,11 +30,10 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
-  Copy,
   FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ElementCard from "@/components/ElementCard";
+import AddElementDialog from "@/components/AddElementDialog";
 
 // Sample protocols data - in a real app, this would come from an API
 const protocolsData = [
@@ -207,9 +206,13 @@ const ProtocolDetail = () => {
   const [selectedElement, setSelectedElement] = useState<number | null>(null);
   const [isElementDetailOpen, setIsElementDetailOpen] = useState(false);
   const [currentElement, setCurrentElement] = useState<any>(null);
+  const [isAddElementDialogOpen, setIsAddElementDialogOpen] = useState(false);
   
   // Find the protocol by ID
-  const protocol = protocolsData.find(p => p.id === id);
+  const [protocol, setProtocol] = useState(() => {
+    const found = protocolsData.find(p => p.id === id);
+    return found ? {...found} : null;
+  });
   
   if (!protocol) {
     return (
@@ -254,16 +257,43 @@ const ProtocolDetail = () => {
   };
 
   const confirmDeleteElement = () => {
-    toast({
-      title: "Элемент удален",
-      description: `Элемент успешно удален из протокола`,
-    });
+    if (selectedElement !== null && protocol) {
+      const updatedElements = protocol.elements.filter(element => element.id !== selectedElement);
+      setProtocol({...protocol, elements: updatedElements});
+      
+      toast({
+        title: "Элемент удален",
+        description: `Элемент успешно удален из протокола`,
+      });
+    }
     setIsDeleteDialogOpen(false);
   };
   
   const handleViewElement = (element: any) => {
     setCurrentElement(element);
     setIsElementDetailOpen(true);
+  };
+
+  const handleAddElementToProtocol = (element: any) => {
+    if (protocol) {
+      // Check if element is already in the protocol
+      if (protocol.elements.some(e => e.id === element.id)) {
+        toast({
+          title: "Элемент уже добавлен",
+          description: "Этот элемент уже есть в протоколе",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Add element to protocol
+      const updatedProtocol = {
+        ...protocol,
+        elements: [...protocol.elements, element]
+      };
+      
+      setProtocol(updatedProtocol);
+    }
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -340,7 +370,10 @@ const ProtocolDetail = () => {
             
             <div className="flex items-center justify-between border-t border-b border-border py-4 my-6">
               <h2 className="font-bold text-xl">Элементы протокола</h2>
-              <Button className="flex items-center">
+              <Button 
+                className="flex items-center"
+                onClick={() => setIsAddElementDialogOpen(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Добавить элемент
               </Button>
@@ -406,7 +439,10 @@ const ProtocolDetail = () => {
             ) : (
               <div className="text-center p-8 border border-dashed rounded-lg">
                 <p className="text-muted-foreground">Этот протокол пока не содержит элементов</p>
-                <Button className="mt-4 flex items-center mx-auto">
+                <Button 
+                  className="mt-4 flex items-center mx-auto"
+                  onClick={() => setIsAddElementDialogOpen(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Добавить первый элемент
                 </Button>
@@ -484,6 +520,14 @@ const ProtocolDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Add element dialog */}
+      <AddElementDialog 
+        open={isAddElementDialogOpen}
+        onOpenChange={setIsAddElementDialogOpen}
+        onAddElement={handleAddElementToProtocol}
+        currentProtocolElements={protocol.elements}
+      />
       
       <Footer />
     </div>
