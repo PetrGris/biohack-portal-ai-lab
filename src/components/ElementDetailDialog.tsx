@@ -198,7 +198,7 @@ const ElementDetailDialog = ({
                 
                 {element.risks.common && element.risks.common.length > 0 && (
                   <div className="mb-3">
-                    <span className="font-medium text-sm text-yellow-600">Частые (>5%):</span>
+                    <span className="font-medium text-sm text-yellow-600">Частые (&gt;5%):</span>
                     <ul className="text-sm mt-1 space-y-1">
                       {element.risks.common.map((risk, index) => (
                         <li key={index} className="flex items-start">
