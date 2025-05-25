@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,12 +16,33 @@ interface CreateElementWizardProps {
   onElementCreated: (element: ElementData) => void;
 }
 
+interface FormData {
+  name: string;
+  type: string;
+  desc: string;
+  goals: string[];
+  mechanism: string;
+  dose: string;
+  method: string;
+  freq: string;
+  schedule: string[];
+  duration: string;
+  stop_if: string;
+  complexity: string;
+  efficacy: number;
+  evidence_level: string;
+  studies: string[];
+  common_risks: string[];
+  critical_risks: string[];
+  tags: string[];
+}
+
 const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateElementWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [similarElements, setSimilarElements] = useState<ElementData[]>([]);
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     type: "",
     desc: "",
@@ -164,26 +184,26 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
     });
   };
 
-  const updateArrayField = (field: string, index: number, value: string) => {
+  const updateArrayField = (field: keyof FormData, index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field as keyof typeof prev].map((item: string, i: number) => 
+      [field]: (prev[field] as string[]).map((item, i) => 
         i === index ? value : item
       )
     }));
   };
 
-  const addArrayField = (field: string) => {
+  const addArrayField = (field: keyof FormData) => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field as keyof typeof prev], ""]
+      [field]: [...(prev[field] as string[]), ""]
     }));
   };
 
-  const removeArrayField = (field: string, index: number) => {
+  const removeArrayField = (field: keyof FormData, index: number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field as keyof typeof prev].filter((_: any, i: number) => i !== index)
+      [field]: (prev[field] as string[]).filter((_, i) => i !== index)
     }));
   };
 

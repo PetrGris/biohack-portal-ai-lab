@@ -18,6 +18,7 @@ interface ElementCardProps {
   frequency: string;
   className?: string;
   children?: ReactNode;
+  onClick?: () => void;
 }
 
 const ElementCard = ({
@@ -31,6 +32,7 @@ const ElementCard = ({
   frequency,
   className,
   children,
+  onClick,
 }: ElementCardProps) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -52,7 +54,7 @@ const ElementCard = ({
   };
 
   return (
-    <Card className={cn("overflow-hidden card-hover", className)}>
+    <Card className={cn("overflow-hidden card-hover", className)} onClick={onClick}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center">
