@@ -1,11 +1,12 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus } from "lucide-react";
 import ElementCard from "@/components/ElementCard";
+import ElementListItem from "@/components/ElementListItem";
 import ElementDetailDialog from "@/components/ElementDetailDialog";
 import CreateElementWizard from "@/components/CreateElementWizard";
 import ElementFilters from "@/components/ElementFilters";
@@ -26,6 +27,7 @@ const Elements = () => {
   const [scienceFilter, setScienceFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [goalFilter, setGoalFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Filter elements based on all criteria
   const filteredElements = elements.filter(element => {
@@ -133,6 +135,59 @@ const Elements = () => {
     recovery: "Регенеративные методики"
   };
 
+  const renderElementsGrid = (elements: ElementData[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {elements.map((element) => (
+        <ElementCard 
+          key={element.id} 
+          {...element}
+          onClick={() => handleViewElement(element)}
+          className="cursor-pointer hover:shadow-md transition-shadow"
+        >
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewElement(element);
+            }}
+            className="w-full mt-2"
+          >
+            Подробнее
+          </Button>
+        </ElementCard>
+      ))}
+    </div>
+  );
+
+  const renderElementsList = (elements: ElementData[]) => (
+    <div className="border rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Элемент</TableHead>
+            <TableHead>Категория</TableHead>
+            <TableHead>Популярность</TableHead>
+            <TableHead>Научность</TableHead>
+            <TableHead>Сложность</TableHead>
+            <TableHead>Время</TableHead>
+            <TableHead>Частота</TableHead>
+            <TableHead>Действия</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {elements.map((element) => (
+            <ElementListItem
+              key={element.id}
+              {...element}
+              onClick={() => handleViewElement(element)}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -174,6 +229,8 @@ const Elements = () => {
             goalFilter={goalFilter}
             onGoalChange={setGoalFilter}
             onClearFilters={handleClearFilters}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
           
           <Tabs defaultValue="all" className="w-full mt-6" onValueChange={setSelectedCategory}>
@@ -187,45 +244,27 @@ const Elements = () => {
             
             {Object.entries(categoryLabels).map(([key, label]) => (
               <TabsContent key={key} value={key} className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {elementsByCategory[key as keyof typeof elementsByCategory].map((element) => (
-                    <ElementCard 
-                      key={element.id} 
-                      {...element}
-                      onClick={() => handleViewElement(element)}
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                    >
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewElement(element);
-                        }}
-                        className="w-full mt-2"
-                      >
-                        Подробнее
+                {viewMode === "grid" 
+                  ? renderElementsGrid(elementsByCategory[key as keyof typeof elementsByCategory])
+                  : renderElementsList(elementsByCategory[key as keyof typeof elementsByCategory])
+                }
+                
+                {elementsByCategory[key as keyof typeof elementsByCategory].length === 0 && (
+                  <div className="text-center p-8">
+                    <p className="text-muted-foreground">
+                      {selectedCategory === "all" 
+                        ? "Элементы не найдены по заданным критериям" 
+                        : `Элементы категории "${label}" не найдены по заданным критериям`
+                      }
+                    </p>
+                    {(selectedTags.length > 0 || difficultyFilter !== "all" || 
+                      scienceFilter !== "all" || timeFilter !== "all" || goalFilter !== "all") && (
+                      <Button variant="outline" className="mt-2" onClick={handleClearFilters}>
+                        Сбросить фильтры
                       </Button>
-                    </ElementCard>
-                  ))}
-                  
-                  {elementsByCategory[key as keyof typeof elementsByCategory].length === 0 && (
-                    <div className="col-span-full text-center p-8">
-                      <p className="text-muted-foreground">
-                        {selectedCategory === "all" 
-                          ? "Элементы не найдены по заданным критериям" 
-                          : `Элементы категории "${label}" не найдены по заданным критериям`
-                        }
-                      </p>
-                      {(selectedTags.length > 0 || difficultyFilter !== "all" || 
-                        scienceFilter !== "all" || timeFilter !== "all" || goalFilter !== "all") && (
-                        <Button variant="outline" className="mt-2" onClick={handleClearFilters}>
-                          Сбросить фильтры
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
             ))}
           </Tabs>

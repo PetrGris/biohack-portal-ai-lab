@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, X, Filter } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Search, X, Filter, LayoutGrid, List } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -24,6 +25,8 @@ interface ElementFiltersProps {
   goalFilter: string;
   onGoalChange: (value: string) => void;
   onClearFilters: () => void;
+  viewMode: "grid" | "list";
+  onViewModeChange: (mode: "grid" | "list") => void;
 }
 
 const availableTags = [
@@ -58,7 +61,9 @@ const ElementFilters = ({
   onTimeChange,
   goalFilter,
   onGoalChange,
-  onClearFilters
+  onClearFilters,
+  viewMode,
+  onViewModeChange
 }: ElementFiltersProps) => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
@@ -87,6 +92,15 @@ const ElementFilters = ({
         </div>
         
         <div className="flex gap-2">
+          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && onViewModeChange(value as "grid" | "list")}>
+            <ToggleGroupItem value="grid" aria-label="Вид сетки">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Вид списка">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+          
           <Select value={sortBy} onValueChange={onSortChange}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Сортировка" />
