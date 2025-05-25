@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -34,6 +33,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddElementDialog from "@/components/AddElementDialog";
+import ElementDetailDialog from "@/components/ElementDetailDialog";
+import { allElements } from "@/data/elements";
 
 // Sample protocols data - in a real app, this would come from an API
 const protocolsData = [
@@ -50,39 +51,9 @@ const protocolsData = [
     status: "В процессе",
     lastUpdated: "Вчера",
     elements: [
-      {
-        id: 1,
-        title: "Контрастный душ",
-        description: "Чередование горячей и холодной воды для улучшения кровообращения и бодрости",
-        category: "Энергия",
-        popularity: 85,
-        difficulty: "Легкая",
-        scienceRating: 4.2,
-        time: "5 мин",
-        frequency: "Ежедневно",
-      },
-      {
-        id: 2,
-        title: "Медитация осознанности",
-        description: "Короткая практика для ментальной ясности и фокуса на предстоящий день",
-        category: "Стресс",
-        popularity: 92,
-        difficulty: "Легкая",
-        scienceRating: 4.7,
-        time: "10 мин",
-        frequency: "Ежедневно",
-      },
-      {
-        id: 3,
-        title: "Стакан воды с лимоном",
-        description: "Гидратация и активация пищеварительной системы перед завтраком",
-        category: "Питание",
-        popularity: 78,
-        difficulty: "Легкая",
-        scienceRating: 3.8,
-        time: "2 мин",
-        frequency: "Ежедневно",
-      }
+      allElements.find(e => e.id === 21) || allElements[0], // Контрастный душ
+      allElements.find(e => e.id === 14) || allElements[1], // Медитация
+      allElements.find(e => e.id === 24) || allElements[2]  // Утренняя гидратация
     ]
   },
   {
@@ -98,28 +69,8 @@ const protocolsData = [
     status: "Активен",
     lastUpdated: "3 дня назад",
     elements: [
-      {
-        id: 4,
-        title: "Блокировка синего света",
-        description: "Использование очков, блокирующих синий свет, за 2 часа до сна",
-        category: "Сон",
-        popularity: 89,
-        difficulty: "Легкая",
-        scienceRating: 4.8,
-        time: "2 часа",
-        frequency: "Ежедневно",
-      },
-      {
-        id: 5,
-        title: "Магниевая добавка",
-        description: "Прием магния глицината для расслабления мышц и нервной системы",
-        category: "Добавки",
-        popularity: 76,
-        difficulty: "Легкая",
-        scienceRating: 4.5,
-        time: "1 мин",
-        frequency: "Ежедневно",
-      }
+      allElements.find(e => e.id === 9) || allElements[0],  // Blue light blocking очки
+      allElements.find(e => e.id === 8) || allElements[1]   // Магний глицинат
     ]
   },
   {
@@ -135,28 +86,7 @@ const protocolsData = [
     status: "Завершен",
     lastUpdated: "2 недели назад",
     elements: [
-      {
-        id: 6,
-        title: "Витамин D3",
-        description: "Прием 1000 ME витамина D3 ежедневно в первой половине дня с жирной пищей",
-        category: "Добавки",
-        popularity: 94,
-        difficulty: "Легкая",
-        scienceRating: 4.9,
-        time: "1 мин",
-        frequency: "Ежедневно",
-      },
-      {
-        id: 7,
-        title: "Витамин K2",
-        description: "Сочетание с витамином K2 для синергетического эффекта и правильного усвоения кальция",
-        category: "Добавки",
-        popularity: 72,
-        difficulty: "Легкая",
-        scienceRating: 4.6,
-        time: "1 мин",
-        frequency: "Ежедневно",
-      }
+      allElements.find(e => e.id === 25) || allElements[0]  // Витамин D3 + K2
     ]
   },
   {
@@ -172,28 +102,8 @@ const protocolsData = [
     status: "Черновик",
     lastUpdated: "1 неделю назад",
     elements: [
-      {
-        id: 8,
-        title: "Комплекс омега-3",
-        description: "Высокая доза EPA/DHA для поддержки когнитивных функций и снижения воспаления",
-        category: "Добавки",
-        popularity: 88,
-        difficulty: "Легкая",
-        scienceRating: 4.7,
-        time: "1 мин",
-        frequency: "Ежедневно",
-      },
-      {
-        id: 9,
-        title: "Техника Помодоро",
-        description: "Работа интервалами по 25 минут с короткими перерывами для оптимизации фокуса",
-        category: "Продуктивность",
-        popularity: 90,
-        difficulty: "Средняя",
-        scienceRating: 4.3,
-        time: "25 мин",
-        frequency: "По необходимости",
-      }
+      allElements.find(e => e.id === 22) || allElements[0], // Омега-3
+      allElements.find(e => e.id === 23) || allElements[1]  // Техника Помодоро
     ]
   }
 ];
@@ -398,15 +308,23 @@ const ProtocolDetail = () => {
                     {protocol.elements.map((element, index) => (
                       <TableRow 
                         key={element.id} 
-                        className="cursor-pointer"
+                        className="cursor-pointer hover:bg-muted/50"
                         onClick={() => handleViewElement(element)}
                       >
                         <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>{element.title}</TableCell>
-                        <TableCell className="max-w-xs truncate">{element.description}</TableCell>
-                        <TableCell>{element.frequency}</TableCell>
-                        <TableCell>{element.time}</TableCell>
-                        <TableCell className={getDifficultyColor(element.difficulty)}>{element.difficulty}</TableCell>
+                        <TableCell className="font-medium">{element.name || element.title}</TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="truncate" title={element.desc || element.description}>
+                            {element.desc || element.description}
+                          </div>
+                        </TableCell>
+                        <TableCell>{element.usage?.freq || element.frequency}</TableCell>
+                        <TableCell>{element.usage?.duration || element.time}</TableCell>
+                        <TableCell className={getDifficultyColor(element.difficulty)}>
+                          {element.complexity === "low" ? "Легкая" : 
+                           element.complexity === "medium" ? "Средняя" :
+                           element.complexity === "high" ? "Сложная" : element.difficulty}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                             <Button 
@@ -468,58 +386,14 @@ const ProtocolDetail = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Element detail dialog */}
-      <Dialog open={isElementDetailOpen} onOpenChange={setIsElementDetailOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{currentElement?.title}</DialogTitle>
-            <DialogDescription>
-              Детальная информация об элементе протокола
-            </DialogDescription>
-          </DialogHeader>
-          
-          {currentElement && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-1">Описание</h4>
-                <p>{currentElement.description}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Категория</h4>
-                  <p>{currentElement.category}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Сложность</h4>
-                  <p className={getDifficultyColor(currentElement.difficulty)}>{currentElement.difficulty}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Частота</h4>
-                  <p>{currentElement.frequency}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Время</h4>
-                  <p>{currentElement.time}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Популярность</h4>
-                  <p>{currentElement.popularity}%</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Научная база</h4>
-                  <p>{currentElement.scienceRating} / 5</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsElementDetailOpen(false)}>Закрыть</Button>
-            <Button>Добавить в мой протокол</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Element detail dialog with full information */}
+      <ElementDetailDialog
+        element={currentElement}
+        open={isElementDetailOpen}
+        onOpenChange={setIsElementDetailOpen}
+        onAddToProtocol={handleAddElementToProtocol}
+        showAddButton={false}
+      />
       
       {/* Add element dialog */}
       <AddElementDialog 

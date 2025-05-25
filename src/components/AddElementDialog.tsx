@@ -8,121 +8,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import ElementCard from "./ElementCard";
+import { allElements } from "@/data/elements";
 
 // Element categories definition
 const elementCategories = [
   { id: "all", label: "Все" },
-  { id: "sleep", label: "Сон" },
-  { id: "nutrition", label: "Питание" },
-  { id: "supplements", label: "Добавки" },
-  { id: "cognitive", label: "Когнитивность" },
-  { id: "physical", label: "Физическая активность" },
-  { id: "light", label: "Световые воздействия" },
-  { id: "cardiovascular", label: "Сердечно-сосудистая система" },
-  { id: "hydration", label: "Гидратация" }
-];
-
-// Sample elements data
-const allElements = [
-  {
-    id: 1,
-    title: "Холодовое воздействие",
-    description: "Короткое воздействие холодом для активации иммунной системы и повышения устойчивости к стрессу.",
-    category: "physical",
-    popularity: 92,
-    difficulty: "Средняя",
-    scienceRating: 4.2,
-    time: "5-10 мин",
-    frequency: "Ежедневно"
-  },
-  {
-    id: 2,
-    title: "Магний глицинат перед сном",
-    description: "Прием магния в форме глицината для улучшения качества сна и расслабления мышц.",
-    category: "supplements",
-    popularity: 88,
-    difficulty: "Легкая",
-    scienceRating: 4.7,
-    time: "1 мин",
-    frequency: "Ежедневно"
-  },
-  {
-    id: 3,
-    title: "Светотерапия утром",
-    description: "Воздействие ярким светом в первый час после пробуждения для синхронизации циркадных ритмов.",
-    category: "light",
-    popularity: 85,
-    difficulty: "Легкая",
-    scienceRating: 4.9,
-    time: "20-30 мин",
-    frequency: "Ежедневно"
-  },
-  {
-    id: 4,
-    title: "Кардио натощак",
-    description: "Кардиотренировка низкой интенсивности перед завтраком для метаболической гибкости.",
-    category: "physical",
-    popularity: 79,
-    difficulty: "Средняя",
-    scienceRating: 4.3,
-    time: "20-40 мин",
-    frequency: "3-4 раза в неделю"
-  },
-  {
-    id: 5,
-    title: "Медитация осознанности",
-    description: "Практика осознанности для снижения стресса, улучшения концентрации и когнитивных функций.",
-    category: "cognitive",
-    popularity: 90,
-    difficulty: "Средняя",
-    scienceRating: 4.6,
-    time: "10-20 мин",
-    frequency: "Ежедневно"
-  },
-  {
-    id: 6,
-    title: "Омега-3 жирные кислоты",
-    description: "Прием омега-3 жирных кислот для поддержки работы мозга и снижения воспаления.",
-    category: "supplements",
-    popularity: 94,
-    difficulty: "Легкая",
-    scienceRating: 4.8,
-    time: "1 мин",
-    frequency: "Ежедневно"
-  },
-  {
-    id: 7,
-    title: "Блокировка синего света",
-    description: "Использование очков, блокирующих синий свет, для улучшения качества сна.",
-    category: "sleep",
-    popularity: 86,
-    difficulty: "Легкая",
-    scienceRating: 4.5,
-    time: "2-3 часа",
-    frequency: "Ежедневно вечером"
-  },
-  {
-    id: 8,
-    title: "Утренняя гидратация",
-    description: "Выпивание стакана воды сразу после пробуждения для гидратации и запуска обмена веществ.",
-    category: "hydration",
-    popularity: 95,
-    difficulty: "Легкая",
-    scienceRating: 4.4,
-    time: "1 мин",
-    frequency: "Ежедневно"
-  },
-  {
-    id: 9,
-    title: "Интервальное голодание 16/8",
-    description: "Ограничение приема пищи 8-часовым окном для метаболического здоровья и аутофагии.",
-    category: "nutrition",
-    popularity: 91,
-    difficulty: "Средняя",
-    scienceRating: 4.7,
-    time: "16 часов",
-    frequency: "Ежедневно/несколько раз в неделю"
-  }
+  { id: "behavioral", label: "Поведенческие" },
+  { id: "nutraceutical", label: "Добавки" },
+  { id: "physical", label: "Физические" },
+  { id: "cognitive", label: "Когнитивные" },
+  { id: "environmental", label: "Окружающая среда" },
+  { id: "tech", label: "Технологии" },
+  { id: "recovery", label: "Восстановление" },
+  { id: "pharma", label: "Фармацевтика" }
 ];
 
 interface AddElementDialogProps {
@@ -150,14 +48,16 @@ const AddElementDialog = ({
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(element => 
-        element.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        element.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        element.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        element.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         element.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     // Filter by category
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(element => element.category === selectedCategory);
+      filtered = filtered.filter(element => element.type === selectedCategory);
     }
     
     setFilteredElements(filtered);

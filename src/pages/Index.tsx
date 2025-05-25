@@ -2,6 +2,7 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import FeatureSection from "@/components/FeatureSection";
+import ProcessSlider from "@/components/ProcessSlider";
 import ProtocolCard from "@/components/ProtocolCard";
 import AIConsultant from "@/components/AIConsultant";
 import Footer from "@/components/Footer";
@@ -39,6 +40,36 @@ const Index = () => {
       days: 14,
       difficulty: "Легкая" as const,
     },
+    {
+      title: "Протокол энергии и выносливости",
+      description: "Комбинация добавок, физических практик и техник дыхания для повышения энергетического уровня.",
+      author: "Елена С.",
+      category: "Энергия", 
+      rating: 4.6,
+      forks: 89,
+      days: 14,
+      difficulty: "Средняя" as const,
+    },
+    {
+      title: "Антистресс протокол",
+      description: "Научно обоснованные методы снижения стресса и тревожности с помощью адаптогенов и медитативных практик.",
+      author: "Андрей Н.",
+      category: "Стресс",
+      rating: 4.5,
+      forks: 67,
+      days: 21,
+      difficulty: "Легкая" as const,
+    },
+    {
+      title: "Протокол долголетия",
+      description: "Комплексный подход к замедлению процессов старения через питание, добавки и практики образа жизни.",
+      author: "Ирина В.",
+      category: "Долголетие",
+      rating: 4.8,
+      forks: 143,
+      days: 90,
+      difficulty: "Сложная" as const,
+    }
   ];
 
   return (
@@ -47,6 +78,8 @@ const Index = () => {
       
       <main className="flex-grow">
         <Hero />
+        
+        <ProcessSlider />
         
         <FeatureSection />
         
