@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
 interface ElementCardProps {
-  id: number;
+  id: string | number;
   title: string;
   description: string;
   category: string;

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import ElementCard from "./ElementCard";
-import { allElements } from "@/data/elements";
+import { useElements } from "@/hooks/useElements";
 
 // Element categories definition
 const elementCategories = [
@@ -38,20 +38,25 @@ const AddElementDialog = ({
 }: AddElementDialogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [filteredElements, setFilteredElements] = useState(allElements);
+  const [filteredElements, setFilteredElements] = useState<any[]>([]);
   const { toast } = useToast();
+  const { data: elements, isLoading } = useElements();
 
   // Filter elements based on search and category
   useEffect(() => {
-    let filtered = allElements;
+    if (!elements) {
+      setFilteredElements([]);
+      return;
+    }
+
+    let filtered = elements;
     
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(element => 
         element.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        element.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        element.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        element.description.toLowerCase().includes(searchTerm.toLowerCase())
+        element.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        element.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -61,10 +66,10 @@ const AddElementDialog = ({
     }
     
     setFilteredElements(filtered);
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, elements]);
 
   // Check if element is already in protocol
-  const isElementInProtocol = (elementId: number) => {
+  const isElementInProtocol = (elementId: string) => {
     return currentProtocolElements.some(element => element.id === elementId);
   };
 
@@ -84,6 +89,19 @@ const AddElementDialog = ({
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Добавить элемент в протокол</DialogTitle>
+            <DialogDescription>Загрузка элементов...</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,7 +150,15 @@ const AddElementDialog = ({
                 {filteredElements.map((element) => (
                   <div key={element.id} className="relative">
                     <ElementCard 
-                      {...element}
+                      id={element.id}
+                      title={element.title}
+                      description={element.description}
+                      category={element.category}
+                      popularity={element.popularity}
+                      difficulty={element.difficulty}
+                      scienceRating={element.science_rating}
+                      time={element.time || "Не указано"}
+                      frequency={element.frequency || "По необходимости"}
                       className={isElementInProtocol(element.id) ? "border-primary/50 bg-primary/5" : ""}
                     >
                       <Button 

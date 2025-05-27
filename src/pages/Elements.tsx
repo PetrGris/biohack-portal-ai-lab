@@ -43,7 +43,7 @@ const Elements = () => {
 
       // Фильтр по тегам
       const tagsMatch = selectedTags.length === 0 || 
-        selectedTags.some(tag => element.tags.includes(tag));
+        (Array.isArray(element.tags) && selectedTags.some(tag => element.tags.includes(tag)));
 
       // Фильтр по сложности
       const difficultyMatch = difficultyFilter === "all" || 
@@ -63,7 +63,7 @@ const Elements = () => {
 
       // Фильтр по целям
       const goalMatch = goalFilter === "all" || 
-        element.goals.some(goal => goal.toLowerCase().includes(goalFilter.toLowerCase()));
+        (Array.isArray(element.goals) && element.goals.some(goal => goal.toLowerCase().includes(goalFilter.toLowerCase())));
 
       return searchMatch && tagsMatch && difficultyMatch && scienceMatch && timeMatch && goalMatch;
     });
@@ -80,7 +80,7 @@ const Elements = () => {
           return difficultyOrder[a.difficulty as keyof typeof difficultyOrder] - 
                  difficultyOrder[b.difficulty as keyof typeof difficultyOrder];
         case "time":
-          return a.time.localeCompare(b.time);
+          return (a.time || "").localeCompare(b.time || "");
         case "name":
         default:
           return a.title.localeCompare(b.title);
@@ -156,16 +156,15 @@ const Elements = () => {
                 {filteredElements.map((element) => (
                   <ElementCard
                     key={element.id}
-                    id={parseInt(element.id)}
+                    id={element.id}
                     title={element.title}
                     description={element.description}
                     category={element.category}
                     popularity={element.popularity}
                     difficulty={element.difficulty}
                     scienceRating={element.science_rating}
-                    time={element.time}
-                    frequency={element.frequency}
-                    tags={element.tags}
+                    time={element.time || "Не указано"}
+                    frequency={element.frequency || "По необходимости"}
                   />
                 ))}
               </div>
@@ -187,16 +186,16 @@ const Elements = () => {
                   {filteredElements.map((element) => (
                     <ElementListItem
                       key={element.id}
-                      id={parseInt(element.id)}
+                      id={element.id}
                       title={element.title}
                       description={element.description}
                       category={element.category}
                       popularity={element.popularity}
                       difficulty={element.difficulty}
                       scienceRating={element.science_rating}
-                      time={element.time}
-                      frequency={element.frequency}
-                      tags={element.tags}
+                      time={element.time || "Не указано"}
+                      frequency={element.frequency || "По необходимости"}
+                      tags={Array.isArray(element.tags) ? element.tags : []}
                     />
                   ))}
                 </TableBody>

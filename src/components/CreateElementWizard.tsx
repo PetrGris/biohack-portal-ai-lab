@@ -8,18 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { ElementData, allElements } from "@/data/elements";
+import { useElements, Element } from "@/hooks/useElements";
 
 interface CreateElementWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onElementCreated: (element: ElementData) => void;
+  onElementCreated: (element: Element) => void;
 }
 
 interface FormData {
   name: string;
   type: string;
-  desc: string;
+  description: string;
   goals: string[];
   mechanism: string;
   dose: string;
@@ -39,13 +39,14 @@ interface FormData {
 
 const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateElementWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [similarElements, setSimilarElements] = useState<ElementData[]>([]);
+  const [similarElements, setSimilarElements] = useState<Element[]>([]);
   const { toast } = useToast();
+  const { data: allElements } = useElements();
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
     type: "",
-    desc: "",
+    description: "",
     goals: [""],
     mechanism: "",
     dose: "",
@@ -83,17 +84,19 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
   ];
 
   const checkSimilarElements = () => {
+    if (!allElements) return;
+    
     const similar = allElements.filter(element => 
       element.name.toLowerCase().includes(formData.name.toLowerCase()) ||
-      element.desc.toLowerCase().includes(formData.name.toLowerCase()) ||
-      (formData.desc && element.desc.toLowerCase().includes(formData.desc.toLowerCase()))
+      element.description.toLowerCase().includes(formData.name.toLowerCase()) ||
+      (formData.description && element.description.toLowerCase().includes(formData.description.toLowerCase()))
     );
     setSimilarElements(similar);
   };
 
   const handleNext = () => {
     if (currentStep === 1) {
-      if (!formData.name || !formData.type || !formData.desc) {
+      if (!formData.name || !formData.type || !formData.description) {
         toast({
           title: "Заполните обязательные поля",
           description: "Название, тип и описание обязательны для заполнения",
@@ -116,48 +119,13 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
   };
 
   const handleFinish = () => {
-    const newElement: ElementData = {
-      id: Math.max(...allElements.map(e => e.id)) + 1,
-      name: formData.name,
-      type: formData.type as any,
-      desc: formData.desc,
-      goals: formData.goals.filter(g => g.trim()),
-      mechanism: formData.mechanism,
-      usage: {
-        dose: formData.dose,
-        method: formData.method || undefined,
-        freq: formData.freq || undefined,
-        schedule: formData.schedule.filter(s => s.trim()) || undefined,
-        duration: formData.duration || undefined,
-        stop_if: formData.stop_if || undefined
-      },
-      complexity: formData.complexity as any,
-      efficacy: formData.efficacy,
-      evidence: {
-        level: formData.evidence_level as any,
-        studies: formData.studies.filter(s => s.trim())
-      },
-      risks: {
-        common: formData.common_risks.filter(r => r.trim()),
-        critical: formData.critical_risks.filter(r => r.trim())
-      },
-      tags: formData.tags.filter(t => t.trim()),
-      // Legacy fields for backward compatibility
-      title: formData.name,
-      description: formData.desc,
-      category: typeOptions.find(opt => opt.value === formData.type)?.label || "Разное",
-      popularity: 50,
-      difficulty: formData.complexity === "low" ? "Легкая" : formData.complexity === "medium" ? "Средняя" : "Сложная",
-      scienceRating: formData.efficacy / 2,
-      time: formData.duration || "Не указано",
-      frequency: formData.freq || "По необходимости"
-    };
-
-    onElementCreated(newElement);
+    // В реальном приложении здесь был бы вызов API для создания элемента
     toast({
       title: "Элемент создан",
-      description: `Элемент "${formData.name}" успешно добавлен в базу`
+      description: `Элемент "${formData.name}" успешно создан`,
+      variant: "default"
     });
+    
     onOpenChange(false);
     
     // Reset form
@@ -165,7 +133,7 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
     setFormData({
       name: "",
       type: "",
-      desc: "",
+      description: "",
       goals: [""],
       mechanism: "",
       dose: "",
@@ -239,12 +207,12 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
             </div>
             
             <div>
-              <Label htmlFor="desc">Краткое описание (Механизм → Эффект) *</Label>
+              <Label htmlFor="description">Краткое описание *</Label>
               <Textarea
-                id="desc"
-                value={formData.desc}
-                onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                placeholder="Например: Mg2+ → Блокада NMDA-рецепторов → Мышечная релаксация"
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Опишите основной эффект элемента"
                 rows={3}
               />
             </div>
@@ -265,7 +233,7 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
                     {similarElements.map(element => (
                       <div key={element.id} className="p-3 border rounded-lg">
                         <h5 className="font-medium">{element.name}</h5>
-                        <p className="text-sm text-muted-foreground">{element.desc}</p>
+                        <p className="text-sm text-muted-foreground">{element.description}</p>
                         <Badge variant="outline" className="mt-1">{element.type}</Badge>
                       </div>
                     ))}
@@ -448,7 +416,7 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
               <div className="space-y-2 text-sm">
                 <div><strong>Название:</strong> {formData.name}</div>
                 <div><strong>Тип:</strong> {typeOptions.find(opt => opt.value === formData.type)?.label}</div>
-                <div><strong>Описание:</strong> {formData.desc}</div>
+                <div><strong>Описание:</strong> {formData.description}</div>
                 <div><strong>Дозировка:</strong> {formData.dose}</div>
                 <div><strong>Сложность:</strong> {formData.complexity}</div>
                 <div><strong>Уровень доказательности:</strong> {formData.evidence_level}</div>

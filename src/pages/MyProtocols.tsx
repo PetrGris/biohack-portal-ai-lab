@@ -56,7 +56,7 @@ const MyProtocols = () => {
                     rating={protocol.rating}
                     forks={protocol.forks}
                     days={protocol.days}
-                    difficulty={protocol.difficulty}
+                    difficulty={protocol.difficulty as "Легкая" | "Средняя" | "Сложная"}
                     status={protocol.status}
                     lastUpdated={protocol.last_updated}
                   />
