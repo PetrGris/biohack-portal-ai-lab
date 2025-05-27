@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -6,7 +5,7 @@ import { Clock, Calendar, TrendingUp, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ElementListItemProps {
-  id: number;
+  id: string; // Changed from number to string to match UUID from database
   title: string;
   description: string;
   category: string;
