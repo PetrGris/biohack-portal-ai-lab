@@ -35,6 +35,8 @@ export interface Element {
   science_rating: number;
   time: string;
   frequency: string;
+  status: string;
+  ai_analysis: any;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +49,7 @@ export const useElements = () => {
       const { data, error } = await supabase
         .from("elements")
         .select("*")
+        .eq("status", "active")
         .order("popularity", { ascending: false });
 
       if (error) {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,69 +8,43 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { useElements, Element } from "@/hooks/useElements";
+import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CreateElementWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onElementCreated: (element: Element) => void;
+  onElementCreated: () => void;
 }
 
 interface FormData {
   name: string;
+  title: string;
   type: string;
   description: string;
-  goals: string[];
   mechanism: string;
-  dose: string;
-  method: string;
-  freq: string;
-  schedule: string[];
-  duration: string;
-  stop_if: string;
-  complexity: string;
-  efficacy: number;
-  evidence_level: string;
-  studies: string[];
-  common_risks: string[];
-  critical_risks: string[];
-  tags: string[];
+  category: string;
 }
 
 const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateElementWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [similarElements, setSimilarElements] = useState<Element[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
-  const { data: allElements } = useElements();
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
+    title: "",
     type: "",
     description: "",
-    goals: [""],
     mechanism: "",
-    dose: "",
-    method: "",
-    freq: "",
-    schedule: [""],
-    duration: "",
-    stop_if: "",
-    complexity: "",
-    efficacy: 5,
-    evidence_level: "",
-    studies: [""],
-    common_risks: [""],
-    critical_risks: [""],
-    tags: [""]
+    category: ""
   });
 
   const steps = [
     { number: 1, title: "Основная информация", description: "Название, тип и описание" },
-    { number: 2, title: "Проверка дубликатов", description: "Поиск похожих элементов" },
-    { number: 3, title: "Детали применения", description: "Протокол и дозировки" },
-    { number: 4, title: "Научная база", description: "Доказательства и риски" },
-    { number: 5, title: "Финализация", description: "Проверка и сохранение" }
+    { number: 2, title: "Детали", description: "Механизм и категория" },
+    { number: 3, title: "Подтверждение", description: "Проверка и создание" }
   ];
 
   const typeOptions = [
@@ -83,16 +58,16 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
     { value: "recovery", label: "Восстановление" }
   ];
 
-  const checkSimilarElements = () => {
-    if (!allElements) return;
-    
-    const similar = allElements.filter(element => 
-      element.name.toLowerCase().includes(formData.name.toLowerCase()) ||
-      element.description.toLowerCase().includes(formData.name.toLowerCase()) ||
-      (formData.description && element.description.toLowerCase().includes(formData.description.toLowerCase()))
-    );
-    setSimilarElements(similar);
-  };
+  const categoryOptions = [
+    { value: "pharma", label: "Лекарственные препараты" },
+    { value: "nutraceutical", label: "БАДы/нутрицевтики" },
+    { value: "physical", label: "Физические практики" },
+    { value: "cognitive", label: "Когнитивные тренировки" },
+    { value: "environmental", label: "Факторы среды" },
+    { value: "tech", label: "Устройства" },
+    { value: "behavioral", label: "Поведенческие паттерны" },
+    { value: "recovery", label: "Регенеративные методики" }
+  ];
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -104,7 +79,17 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
         });
         return;
       }
-      checkSimilarElements();
+    }
+    
+    if (currentStep === 2) {
+      if (!formData.category) {
+        toast({
+          title: "Заполните категорию",
+          description: "Категория обязательна для заполнения",
+          variant: "destructive"
+        });
+        return;
+      }
     }
     
     if (currentStep < steps.length) {
@@ -118,61 +103,95 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
     }
   };
 
-  const handleFinish = () => {
-    // В реальном приложении здесь был бы вызов API для создания элемента
-    toast({
-      title: "Элемент создан",
-      description: `Элемент "${formData.name}" успешно создан`,
-      variant: "default"
-    });
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
     
-    onOpenChange(false);
-    
-    // Reset form
+    try {
+      // Создаем элемент со статусом "candidate"
+      const { data: newElement, error: createError } = await supabase
+        .from('elements')
+        .insert({
+          name: formData.name,
+          title: formData.title || formData.name,
+          type: formData.type,
+          description: formData.description,
+          mechanism: formData.mechanism,
+          category: formData.category,
+          status: 'candidate',
+          difficulty: 'Средняя',
+          complexity: 'medium'
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      toast({
+        title: "Элемент создан",
+        description: `Элемент "${formData.name}" создан и отправлен на ИИ анализ`,
+      });
+
+      // Запускаем ИИ анализ
+      setIsAnalyzing(true);
+      
+      // Обновляем статус на "ai_review"
+      await supabase
+        .from('elements')
+        .update({ status: 'ai_review' })
+        .eq('id', newElement.id);
+
+      try {
+        const response = await fetch('/api/v1/analyze-element', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ elementId: newElement.id }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка ИИ анализа');
+        }
+
+        toast({
+          title: "ИИ анализ завершен",
+          description: "Элемент дополнен и готов к использованию",
+        });
+      } catch (aiError) {
+        console.error('AI analysis error:', aiError);
+        toast({
+          title: "Ошибка ИИ анализа",
+          description: "Элемент создан, но анализ не выполнен",
+          variant: "destructive"
+        });
+      }
+
+      onElementCreated();
+      handleReset();
+      
+    } catch (error) {
+      console.error('Error creating element:', error);
+      toast({
+        title: "Ошибка создания",
+        description: "Не удалось создать элемент",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleReset = () => {
     setCurrentStep(1);
     setFormData({
       name: "",
+      title: "",
       type: "",
       description: "",
-      goals: [""],
       mechanism: "",
-      dose: "",
-      method: "",
-      freq: "",
-      schedule: [""],
-      duration: "",
-      stop_if: "",
-      complexity: "",
-      efficacy: 5,
-      evidence_level: "",
-      studies: [""],
-      common_risks: [""],
-      critical_risks: [""],
-      tags: [""]
+      category: ""
     });
-  };
-
-  const updateArrayField = (field: keyof FormData, index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (prev[field] as string[]).map((item, i) => 
-        i === index ? value : item
-      )
-    }));
-  };
-
-  const addArrayField = (field: keyof FormData) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...(prev[field] as string[]), ""]
-    }));
-  };
-
-  const removeArrayField = (field: keyof FormData, index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (prev[field] as string[]).filter((_, i) => i !== index)
-    }));
   };
 
   const renderStep = () => {
@@ -186,7 +205,7 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Например: Магний глицинат (400 мг)"
+                placeholder="Например: Магний глицинат"
               />
             </div>
             
@@ -223,27 +242,30 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
         return (
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Проверка на дубликаты</h4>
-              {similarElements.length > 0 ? (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Найдены похожие элементы. Убедитесь, что ваш элемент уникален:
-                  </p>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {similarElements.map(element => (
-                      <div key={element.id} className="p-3 border rounded-lg">
-                        <h5 className="font-medium">{element.name}</h5>
-                        <p className="text-sm text-muted-foreground">{element.description}</p>
-                        <Badge variant="outline" className="mt-1">{element.type}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-green-600">
-                  ✅ Похожих элементов не найдено. Ваш элемент уникален!
-                </p>
-              )}
+              <Label htmlFor="category">Категория *</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите категорию" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="mechanism">Механизм действия (опционально)</Label>
+              <Textarea
+                id="mechanism"
+                value={formData.mechanism}
+                onChange={(e) => setFormData(prev => ({ ...prev, mechanism: e.target.value }))}
+                placeholder="Укажите известный механизм действия (будет дополнен ИИ)"
+                rows={3}
+              />
             </div>
           </div>
         );
@@ -251,181 +273,25 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
       case 3:
         return (
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="goals">Цели и ожидаемые результаты</Label>
-              {formData.goals.map((goal, index) => (
-                <div key={index} className="flex items-center space-x-2 mt-2">
-                  <Input
-                    value={goal}
-                    onChange={(e) => updateArrayField('goals', index, e.target.value)}
-                    placeholder="Например: Снижение времени засыпания на 35%"
-                  />
-                  {formData.goals.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeArrayField('goals', index)}
-                    >
-                      ✕
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addArrayField('goals')}
-                className="mt-2"
-              >
-                + Добавить цель
-              </Button>
-            </div>
-
-            <div>
-              <Label htmlFor="mechanism">Механизм действия</Label>
-              <Textarea
-                id="mechanism"
-                value={formData.mechanism}
-                onChange={(e) => setFormData(prev => ({ ...prev, mechanism: e.target.value }))}
-                placeholder="Детальный биохимический/физиологический путь"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="dose">Дозировка/интенсивность</Label>
-                <Input
-                  id="dose"
-                  value={formData.dose}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dose: e.target.value }))}
-                  placeholder="Например: 400 мг/сут"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="method">Способ применения</Label>
-                <Input
-                  id="method"
-                  value={formData.method}
-                  onChange={(e) => setFormData(prev => ({ ...prev, method: e.target.value }))}
-                  placeholder="Например: сублингвально"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="freq">Частота</Label>
-                <Input
-                  id="freq"
-                  value={formData.freq}
-                  onChange={(e) => setFormData(prev => ({ ...prev, freq: e.target.value }))}
-                  placeholder="Например: 3 раза/день"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="duration">Длительность курса</Label>
-                <Input
-                  id="duration"
-                  value={formData.duration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
-                  placeholder="Например: 8 недель"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="complexity">Сложность применения</Label>
-                <Select value={formData.complexity} onValueChange={(value) => setFormData(prev => ({ ...prev, complexity: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите сложность" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Низкая (самостоятельно)</SelectItem>
-                    <SelectItem value="medium">Средняя (самоконтроль)</SelectItem>
-                    <SelectItem value="high">Высокая (медицинский надзор)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="evidence_level">Уровень доказательности</Label>
-                <Select value={formData.evidence_level} onValueChange={(value) => setFormData(prev => ({ ...prev, evidence_level: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите уровень" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">A - Высокий (≥3 РКИ + мета-анализ)</SelectItem>
-                    <SelectItem value="B">B - Средний (1 РКИ + когорты)</SelectItem>
-                    <SelectItem value="C">C - Низкий (наблюдательные)</SelectItem>
-                    <SelectItem value="D">D - Очень низкий (доклинические)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label>Ссылки на исследования</Label>
-              {formData.studies.map((study, index) => (
-                <div key={index} className="flex items-center space-x-2 mt-2">
-                  <Input
-                    value={study}
-                    onChange={(e) => updateArrayField('studies', index, e.target.value)}
-                    placeholder="DOI:10.xxxx/xxxx или PMID:xxxxxxxx"
-                  />
-                  {formData.studies.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeArrayField('studies', index)}
-                    >
-                      ✕
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addArrayField('studies')}
-                className="mt-2"
-              >
-                + Добавить исследование
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-4">
             <div className="p-4 border rounded-lg bg-muted/30">
-              <h4 className="font-semibold mb-2">Проверьте данные перед сохранением:</h4>
+              <h4 className="font-semibold mb-2">Проверьте данные перед созданием:</h4>
               <div className="space-y-2 text-sm">
                 <div><strong>Название:</strong> {formData.name}</div>
                 <div><strong>Тип:</strong> {typeOptions.find(opt => opt.value === formData.type)?.label}</div>
+                <div><strong>Категория:</strong> {categoryOptions.find(opt => opt.value === formData.category)?.label}</div>
                 <div><strong>Описание:</strong> {formData.description}</div>
-                <div><strong>Дозировка:</strong> {formData.dose}</div>
-                <div><strong>Сложность:</strong> {formData.complexity}</div>
-                <div><strong>Уровень доказательности:</strong> {formData.evidence_level}</div>
+                {formData.mechanism && <div><strong>Механизм:</strong> {formData.mechanism}</div>}
               </div>
             </div>
             
-            <p className="text-sm text-muted-foreground">
-              После создания элемент будет добавлен в общую базу данных и станет доступен для всех пользователей.
-            </p>
+            <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
+              <h4 className="font-semibold mb-2">Что произойдет дальше:</h4>
+              <ol className="text-sm space-y-1">
+                <li>1. Элемент будет создан со статусом "Кандидат"</li>
+                <li>2. Запустится ИИ анализ для дополнения информации</li>
+                <li>3. После анализа элемент перейдет в статус "К использованию"</li>
+              </ol>
+            </div>
           </div>
         );
 
@@ -440,7 +306,6 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
         <DialogHeader>
           <DialogTitle>Создание нового элемента</DialogTitle>
           
-          {/* Progress indicator */}
           <div className="flex items-center justify-between mt-4">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center">
@@ -490,9 +355,21 @@ const CreateElementWizard = ({ open, onOpenChange, onElementCreated }: CreateEle
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button onClick={handleFinish}>
-              <Check className="h-4 w-4 mr-2" />
-              Создать элемент
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting || isAnalyzing}
+            >
+              {isSubmitting || isAnalyzing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {isAnalyzing ? 'ИИ анализ...' : 'Создание...'}
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Создать элемент
+                </>
+              )}
             </Button>
           )}
         </div>

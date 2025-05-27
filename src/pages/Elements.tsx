@@ -1,16 +1,19 @@
-
 import { useState } from "react";
 import { useElements } from "@/hooks/useElements";
 import Navbar from "@/components/Navbar";
 import ElementFilters from "@/components/ElementFilters";
 import ElementCard from "@/components/ElementCard";
 import ElementListItem from "@/components/ElementListItem";
+import ElementDetailDialog from "@/components/ElementDetailDialog";
+import CreateElementWizard from "@/components/CreateElementWizard";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus } from "lucide-react";
 
 const Elements = () => {
-  const { data: elements, isLoading, error } = useElements();
+  const { data: elements, isLoading, error, refetch } = useElements();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -20,6 +23,11 @@ const Elements = () => {
   const [timeFilter, setTimeFilter] = useState("all");
   const [goalFilter, setGoalFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  
+  // Состояния для диалогов
+  const [selectedElement, setSelectedElement] = useState(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
 
   const handleClearFilters = () => {
     setSelectedTags([]);
@@ -28,6 +36,16 @@ const Elements = () => {
     setTimeFilter("all");
     setGoalFilter("all");
     setSearchTerm("");
+  };
+
+  const handleElementClick = (element) => {
+    setSelectedElement(element);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handleElementCreated = () => {
+    refetch();
+    setIsCreateWizardOpen(false);
   };
 
   // Функция фильтрации и сортировки
@@ -112,11 +130,17 @@ const Elements = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">База элементов</h1>
-          <p className="text-xl text-muted-foreground">
-            Изучайте и выбирайте элементы для своих протоколов
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-4">База элементов</h1>
+            <p className="text-xl text-muted-foreground">
+              Изучайте и выбирайте элементы для своих протоколов
+            </p>
+          </div>
+          <Button onClick={() => setIsCreateWizardOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Добавить элемент
+          </Button>
         </div>
 
         <ElementFilters
@@ -165,6 +189,7 @@ const Elements = () => {
                     scienceRating={element.science_rating || 0}
                     time={element.time || "Не указано"}
                     frequency={element.frequency || "По необходимости"}
+                    onClick={() => handleElementClick(element)}
                   />
                 ))}
               </div>
@@ -196,6 +221,7 @@ const Elements = () => {
                       time={element.time || "Не указано"}
                       frequency={element.frequency || "По необходимости"}
                       tags={Array.isArray(element.tags) ? element.tags : []}
+                      onClick={() => handleElementClick(element)}
                     />
                   ))}
                 </TableBody>
@@ -209,6 +235,18 @@ const Elements = () => {
             )}
           </div>
         )}
+
+        <ElementDetailDialog
+          element={selectedElement}
+          open={isDetailDialogOpen}
+          onOpenChange={setIsDetailDialogOpen}
+        />
+
+        <CreateElementWizard
+          open={isCreateWizardOpen}
+          onOpenChange={setIsCreateWizardOpen}
+          onElementCreated={handleElementCreated}
+        />
       </div>
     </div>
   );

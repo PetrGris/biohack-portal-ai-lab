@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       elements: {
         Row: {
+          ai_analysis: Json | null
           category: string
           complexity: Database["public"]["Enums"]["complexity_level"]
           created_at: string
@@ -26,6 +27,7 @@ export type Database = {
           popularity: number | null
           risks: Json | null
           science_rating: number | null
+          status: string | null
           tags: Json | null
           time: string | null
           title: string
@@ -34,6 +36,7 @@ export type Database = {
           usage: Json | null
         }
         Insert: {
+          ai_analysis?: Json | null
           category: string
           complexity: Database["public"]["Enums"]["complexity_level"]
           created_at?: string
@@ -49,6 +52,7 @@ export type Database = {
           popularity?: number | null
           risks?: Json | null
           science_rating?: number | null
+          status?: string | null
           tags?: Json | null
           time?: string | null
           title: string
@@ -57,6 +61,7 @@ export type Database = {
           usage?: Json | null
         }
         Update: {
+          ai_analysis?: Json | null
           category?: string
           complexity?: Database["public"]["Enums"]["complexity_level"]
           created_at?: string
@@ -72,6 +77,7 @@ export type Database = {
           popularity?: number | null
           risks?: Json | null
           science_rating?: number | null
+          status?: string | null
           tags?: Json | null
           time?: string | null
           title?: string
