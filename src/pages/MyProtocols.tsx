@@ -1,197 +1,77 @@
 
-import { useState } from "react";
+import { useProtocols } from "@/hooks/useProtocols";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Filter, ListFilter } from "lucide-react";
 import ProtocolCard from "@/components/ProtocolCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const MyProtocols = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const { data: protocols, isLoading, error } = useProtocols();
 
-  const myProtocols = [
-    {
-      id: "morning-ritual",
-      title: "Утренний ритуал для продуктивности",
-      description: "Персональный протокол для максимальной энергии и концентрации в первой половине дня.",
-      author: "Я",
-      category: "Продуктивность",
-      rating: 4.5,
-      forks: 0,
-      days: 7,
-      difficulty: "Легкая" as const,
-      status: "В процессе",
-      lastUpdated: "Вчера"
-    },
-    {
-      id: "sleep-optimization",
-      title: "Оптимизация сна (форк)",
-      description: "Адаптированный протокол для глубокого сна и быстрого засыпания с учетом моих особенностей.",
-      author: "Я (форк от Алексей К.)",
-      category: "Сон",
-      rating: 5.0,
-      forks: 2,
-      days: 14,
-      difficulty: "Средняя" as const,
-      status: "Активен",
-      lastUpdated: "3 дня назад"
-    },
-    {
-      id: "vitamin-d",
-      title: "Протокол микродозинга витамина D",
-      description: "Экспериментальный протокол с ежедневным приемом небольших доз витамина D для улучшения иммунитета.",
-      author: "Я",
-      category: "Добавки",
-      rating: 4.2,
-      forks: 0,
-      days: 30,
-      difficulty: "Легкая" as const,
-      status: "Завершен",
-      lastUpdated: "2 недели назад"
-    },
-    {
-      id: "cognitive-optimization",
-      title: "Когнитивная оптимизация",
-      description: "Комплексный протокол для улучшения памяти и ментальной энергии с использованием нутрицевтиков.",
-      author: "Я (форк от Мария Л.)",
-      category: "Когнитивность",
-      rating: 4.7,
-      forks: 1,
-      days: 21,
-      difficulty: "Сложная" as const,
-      status: "Черновик",
-      lastUpdated: "1 неделю назад"
-    }
-  ];
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Alert>
+            <AlertDescription>
+              Ошибка загрузки протоколов: {error.message}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-            <div>
-              <h1 className="section-title">Мои протоколы</h1>
-              <p className="section-subtitle">
-                Создавайте, отслеживайте и улучшайте свои персональные протоколы
-              </p>
-            </div>
-            
-            <div className="flex mt-4 md:mt-0">
-              <Button className="flex items-center">
-                <Plus className="h-4 w-4 mr-2" />
-                Новый протокол
-              </Button>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">Мои протоколы</h1>
+          <p className="text-xl text-muted-foreground">
+            Управляйте своими персональными протоколами оптимизации
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="h-64 w-full" />
+            ))}
           </div>
-          
-          <Tabs defaultValue="all" className="w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
-              <TabsList className="w-full sm:w-auto">
-                <TabsTrigger value="all">Все</TabsTrigger>
-                <TabsTrigger value="active">Активные</TabsTrigger>
-                <TabsTrigger value="draft">Черновики</TabsTrigger>
-                <TabsTrigger value="completed">Завершенные</TabsTrigger>
-                <TabsTrigger value="forked">Форки</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto mt-4 sm:mt-0">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input 
-                    placeholder="Поиск протоколов..." 
-                    className="pl-10 w-full sm:w-60"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Button variant="outline" className="flex items-center">
-                  <ListFilter className="h-4 w-4 mr-2" />
-                  Сортировка
-                </Button>
-              </div>
-            </div>
-            
-            <TabsContent value="all" className="mt-6">
+        ) : (
+          <>
+            {protocols && protocols.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myProtocols.map((protocol, index) => (
-                  <div key={index} className="relative">
-                    <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                      {protocol.status}
-                    </div>
-                    <ProtocolCard {...protocol} />
-                  </div>
+                {protocols.map((protocol) => (
+                  <ProtocolCard
+                    key={protocol.id}
+                    id={protocol.slug}
+                    title={protocol.title}
+                    description={protocol.description}
+                    author={protocol.author}
+                    category={protocol.category}
+                    rating={protocol.rating}
+                    forks={protocol.forks}
+                    days={protocol.days}
+                    difficulty={protocol.difficulty}
+                    status={protocol.status}
+                    lastUpdated={protocol.last_updated}
+                  />
                 ))}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="active">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myProtocols
-                  .filter((protocol) => protocol.status === "Активен")
-                  .map((protocol, index) => (
-                    <div key={index} className="relative">
-                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                        {protocol.status}
-                      </div>
-                      <ProtocolCard {...protocol} />
-                    </div>
-                  ))}
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  У вас пока нет протоколов. Создайте свой первый протокол!
+                </p>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="draft">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myProtocols
-                  .filter((protocol) => protocol.status === "Черновик")
-                  .map((protocol, index) => (
-                    <div key={index} className="relative">
-                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                        {protocol.status}
-                      </div>
-                      <ProtocolCard {...protocol} />
-                    </div>
-                  ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="completed">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myProtocols
-                  .filter((protocol) => protocol.status === "Завершен")
-                  .map((protocol, index) => (
-                    <div key={index} className="relative">
-                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                        {protocol.status}
-                      </div>
-                      <ProtocolCard {...protocol} />
-                    </div>
-                  ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="forked">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myProtocols
-                  .filter((protocol) => protocol.author.includes("форк"))
-                  .map((protocol, index) => (
-                    <div key={index} className="relative">
-                      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm border border-border">
-                        {protocol.status}
-                      </div>
-                      <ProtocolCard {...protocol} />
-                    </div>
-                  ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-      
-      <Footer />
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

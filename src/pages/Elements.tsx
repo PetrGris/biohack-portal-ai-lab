@@ -1,26 +1,18 @@
+
 import { useState } from "react";
+import { useElements } from "@/hooks/useElements";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import ElementFilters from "@/components/ElementFilters";
 import ElementCard from "@/components/ElementCard";
 import ElementListItem from "@/components/ElementListItem";
-import ElementDetailDialog from "@/components/ElementDetailDialog";
-import CreateElementWizard from "@/components/CreateElementWizard";
-import ElementFilters from "@/components/ElementFilters";
-import { allElements, ElementData } from "@/data/elements";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Elements = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
-  const [elements, setElements] = useState<ElementData[]>(allElements);
+  const { data: elements, isLoading, error } = useElements();
   
-  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("name");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
@@ -29,80 +21,8 @@ const Elements = () => {
   const [goalFilter, setGoalFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Filter elements based on all criteria
-  const filteredElements = elements.filter(element => {
-    // Search filter
-    const matchesSearch = !searchTerm || 
-      element.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      element.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      element.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      element.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      element.mechanism?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    // Category filter
-    const matchesCategory = selectedCategory === "all" || element.type === selectedCategory;
-    
-    // Tags filter
-    const matchesTags = selectedTags.length === 0 || 
-      selectedTags.some(tag => element.tags?.includes(tag));
-    
-    // Difficulty filter
-    const matchesDifficulty = difficultyFilter === "all" || element.difficulty === difficultyFilter;
-    
-    // Science filter
-    const matchesScience = scienceFilter === "all" || 
-      (scienceFilter === "high" && element.scienceRating >= 4) ||
-      (scienceFilter === "medium" && element.scienceRating === 3) ||
-      (scienceFilter === "low" && element.scienceRating <= 2);
-    
-    // Time filter
-    const matchesTime = timeFilter === "all" || 
-      (timeFilter === "quick" && element.time.includes("мин") && parseInt(element.time) <= 10) ||
-      (timeFilter === "medium" && element.time.includes("мин") && parseInt(element.time) > 10 && parseInt(element.time) <= 30) ||
-      (timeFilter === "long" && (element.time.includes("час") || (element.time.includes("мин") && parseInt(element.time) > 30)));
-    
-    // Goal filter
-    const matchesGoal = goalFilter === "all" || 
-      element.goals?.some(goal => goal.includes(goalFilter));
-    
-    return matchesSearch && matchesCategory && matchesTags && matchesDifficulty && 
-           matchesScience && matchesTime && matchesGoal;
-  });
-
-  // Sort elements
-  const sortedElements = [...filteredElements].sort((a, b) => {
-    switch (sortBy) {
-      case "popularity":
-        return b.popularity - a.popularity;
-      case "science":
-        return b.scienceRating - a.scienceRating;
-      case "difficulty":
-        const difficultyOrder = { "Легкая": 1, "Средняя": 2, "Сложная": 3 };
-        return difficultyOrder[a.difficulty as keyof typeof difficultyOrder] - 
-               difficultyOrder[b.difficulty as keyof typeof difficultyOrder];
-      case "time":
-        const getTimeValue = (time: string) => {
-          if (time.includes("час")) return parseInt(time) * 60;
-          return parseInt(time) || 0;
-        };
-        return getTimeValue(a.time) - getTimeValue(b.time);
-      default:
-        return a.name.localeCompare(b.name);
-    }
-  });
-
-  const handleViewElement = (element: ElementData) => {
-    setSelectedElement(element);
-    setIsDetailDialogOpen(true);
-  };
-
-  const handleElementCreated = (newElement: ElementData) => {
-    setElements(prev => [...prev, newElement]);
-  };
-
   const handleClearFilters = () => {
     setSelectedTags([]);
-    setSortBy("name");
     setDifficultyFilter("all");
     setScienceFilter("all");
     setTimeFilter("all");
@@ -110,183 +30,187 @@ const Elements = () => {
     setSearchTerm("");
   };
 
-  // Group elements by category for the tabs
-  const elementsByCategory = {
-    all: sortedElements,
-    pharma: sortedElements.filter(e => e.type === "pharma"),
-    nutraceutical: sortedElements.filter(e => e.type === "nutraceutical"),
-    physical: sortedElements.filter(e => e.type === "physical"),
-    cognitive: sortedElements.filter(e => e.type === "cognitive"),
-    environmental: sortedElements.filter(e => e.type === "environmental"),
-    tech: sortedElements.filter(e => e.type === "tech"),
-    behavioral: sortedElements.filter(e => e.type === "behavioral"),
-    recovery: sortedElements.filter(e => e.type === "recovery")
+  // Функция фильтрации и сортировки
+  const getFilteredAndSortedElements = () => {
+    if (!elements) return [];
+
+    let filtered = elements.filter(element => {
+      // Поиск по тексту
+      const searchMatch = !searchTerm || 
+        element.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        element.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        element.mechanism?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Фильтр по тегам
+      const tagsMatch = selectedTags.length === 0 || 
+        selectedTags.some(tag => element.tags.includes(tag));
+
+      // Фильтр по сложности
+      const difficultyMatch = difficultyFilter === "all" || 
+        element.difficulty === difficultyFilter;
+
+      // Фильтр по научной базе
+      const scienceMatch = scienceFilter === "all" || 
+        (scienceFilter === "high" && element.science_rating >= 4) ||
+        (scienceFilter === "medium" && element.science_rating >= 3 && element.science_rating < 4) ||
+        (scienceFilter === "low" && element.science_rating < 3);
+
+      // Фильтр по времени
+      const timeMatch = timeFilter === "all" || 
+        (timeFilter === "quick" && element.time && (element.time.includes("мин") && parseInt(element.time) <= 10)) ||
+        (timeFilter === "medium" && element.time && (element.time.includes("мин") && parseInt(element.time) > 10 && parseInt(element.time) <= 30)) ||
+        (timeFilter === "long" && element.time && (element.time.includes("час") || (element.time.includes("мин") && parseInt(element.time) > 30)));
+
+      // Фильтр по целям
+      const goalMatch = goalFilter === "all" || 
+        element.goals.some(goal => goal.toLowerCase().includes(goalFilter.toLowerCase()));
+
+      return searchMatch && tagsMatch && difficultyMatch && scienceMatch && timeMatch && goalMatch;
+    });
+
+    // Сортировка
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "popularity":
+          return b.popularity - a.popularity;
+        case "science":
+          return b.science_rating - a.science_rating;
+        case "difficulty":
+          const difficultyOrder = { "Легкая": 1, "Средняя": 2, "Сложная": 3 };
+          return difficultyOrder[a.difficulty as keyof typeof difficultyOrder] - 
+                 difficultyOrder[b.difficulty as keyof typeof difficultyOrder];
+        case "time":
+          return a.time.localeCompare(b.time);
+        case "name":
+        default:
+          return a.title.localeCompare(b.title);
+      }
+    });
+
+    return filtered;
   };
 
-  const categoryLabels = {
-    all: "Все элементы",
-    pharma: "Лекарственные препараты",
-    nutraceutical: "БАДы/нутрицевтики", 
-    physical: "Физические практики",
-    cognitive: "Когнитивные тренировки",
-    environmental: "Факторы среды",
-    tech: "Устройства",
-    behavioral: "Поведенческие паттерны",
-    recovery: "Регенеративные методики"
-  };
+  const filteredElements = getFilteredAndSortedElements();
 
-  const renderElementsGrid = (elements: ElementData[]) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {elements.map((element) => (
-        <ElementCard 
-          key={element.id} 
-          {...element}
-          onClick={() => handleViewElement(element)}
-          className="cursor-pointer hover:shadow-md transition-shadow"
-        >
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewElement(element);
-            }}
-            className="w-full mt-2"
-          >
-            Подробнее
-          </Button>
-        </ElementCard>
-      ))}
-    </div>
-  );
-
-  const renderElementsList = (elements: ElementData[]) => (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Элемент</TableHead>
-            <TableHead>Категория</TableHead>
-            <TableHead>Популярность</TableHead>
-            <TableHead>Научность</TableHead>
-            <TableHead>Сложность</TableHead>
-            <TableHead>Время</TableHead>
-            <TableHead>Частота</TableHead>
-            <TableHead>Действия</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {elements.map((element) => (
-            <ElementListItem
-              key={element.id}
-              {...element}
-              onClick={() => handleViewElement(element)}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Alert>
+            <AlertDescription>
+              Ошибка загрузки элементов: {error.message}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-            <div>
-              <h1 className="section-title">База элементов</h1>
-              <p className="section-subtitle">
-                Научно обоснованные элементы для создания ваших протоколов биохакинга
-              </p>
-            </div>
-            
-            <div className="flex mt-4 md:mt-0">
-              <Button 
-                className="flex items-center"
-                onClick={() => setIsCreateWizardOpen(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Создать элемент
-              </Button>
-            </div>
-          </div>
-          
-          <ElementFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedTags={selectedTags}
-            onTagsChange={setSelectedTags}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            difficultyFilter={difficultyFilter}
-            onDifficultyChange={setDifficultyFilter}
-            scienceFilter={scienceFilter}
-            onScienceChange={setScienceFilter}
-            timeFilter={timeFilter}
-            onTimeChange={setTimeFilter}
-            goalFilter={goalFilter}
-            onGoalChange={setGoalFilter}
-            onClearFilters={handleClearFilters}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
-          
-          <Tabs defaultValue="all" className="w-full mt-6" onValueChange={setSelectedCategory}>
-            <TabsList className="w-full overflow-x-auto justify-start">
-              {Object.entries(categoryLabels).map(([key, label]) => (
-                <TabsTrigger key={key} value={key} className="whitespace-nowrap">
-                  {label} ({elementsByCategory[key as keyof typeof elementsByCategory].length})
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {Object.entries(categoryLabels).map(([key, label]) => (
-              <TabsContent key={key} value={key} className="mt-6">
-                {viewMode === "grid" 
-                  ? renderElementsGrid(elementsByCategory[key as keyof typeof elementsByCategory])
-                  : renderElementsList(elementsByCategory[key as keyof typeof elementsByCategory])
-                }
-                
-                {elementsByCategory[key as keyof typeof elementsByCategory].length === 0 && (
-                  <div className="text-center p-8">
-                    <p className="text-muted-foreground">
-                      {selectedCategory === "all" 
-                        ? "Элементы не найдены по заданным критериям" 
-                        : `Элементы категории "${label}" не найдены по заданным критериям`
-                      }
-                    </p>
-                    {(selectedTags.length > 0 || difficultyFilter !== "all" || 
-                      scienceFilter !== "all" || timeFilter !== "all" || goalFilter !== "all") && (
-                      <Button variant="outline" className="mt-2" onClick={handleClearFilters}>
-                        Сбросить фильтры
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">База элементов</h1>
+          <p className="text-xl text-muted-foreground">
+            Изучайте и выбирайте элементы для своих протоколов
+          </p>
         </div>
-      </main>
-      
-      {/* Element detail dialog */}
-      <ElementDetailDialog
-        element={selectedElement}
-        open={isDetailDialogOpen}
-        onOpenChange={setIsDetailDialogOpen}
-        showAddButton={false}
-      />
-      
-      {/* Create element wizard */}
-      <CreateElementWizard
-        open={isCreateWizardOpen}
-        onOpenChange={setIsCreateWizardOpen}
-        onElementCreated={handleElementCreated}
-      />
-      
-      <Footer />
+
+        <ElementFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          difficultyFilter={difficultyFilter}
+          onDifficultyChange={setDifficultyFilter}
+          scienceFilter={scienceFilter}
+          onScienceChange={setScienceFilter}
+          timeFilter={timeFilter}
+          onTimeChange={setTimeFilter}
+          goalFilter={goalFilter}
+          onGoalChange={setGoalFilter}
+          onClearFilters={handleClearFilters}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="h-48 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground mb-6">
+              Найдено элементов: {filteredElements.length} из {elements?.length || 0}
+            </p>
+
+            {viewMode === "grid" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredElements.map((element) => (
+                  <ElementCard
+                    key={element.id}
+                    id={parseInt(element.id)}
+                    title={element.title}
+                    description={element.description}
+                    category={element.category}
+                    popularity={element.popularity}
+                    difficulty={element.difficulty}
+                    scienceRating={element.science_rating}
+                    time={element.time}
+                    frequency={element.frequency}
+                    tags={element.tags}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Элемент</TableHead>
+                    <TableHead>Категория</TableHead>
+                    <TableHead>Популярность</TableHead>
+                    <TableHead>Научность</TableHead>
+                    <TableHead>Сложность</TableHead>
+                    <TableHead>Время</TableHead>
+                    <TableHead>Частота</TableHead>
+                    <TableHead>Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredElements.map((element) => (
+                    <ElementListItem
+                      key={element.id}
+                      id={parseInt(element.id)}
+                      title={element.title}
+                      description={element.description}
+                      category={element.category}
+                      popularity={element.popularity}
+                      difficulty={element.difficulty}
+                      scienceRating={element.science_rating}
+                      time={element.time}
+                      frequency={element.frequency}
+                      tags={element.tags}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+
+            {filteredElements.length === 0 && !isLoading && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Элементы не найдены. Попробуйте изменить фильтры поиска.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
