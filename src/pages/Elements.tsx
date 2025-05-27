@@ -160,9 +160,9 @@ const Elements = () => {
                     title={element.title}
                     description={element.description}
                     category={element.category}
-                    popularity={element.popularity}
+                    popularity={element.popularity || 0}
                     difficulty={element.difficulty}
-                    scienceRating={element.science_rating}
+                    scienceRating={element.science_rating || 0}
                     time={element.time || "Не указано"}
                     frequency={element.frequency || "По необходимости"}
                   />
@@ -190,9 +190,9 @@ const Elements = () => {
                       title={element.title}
                       description={element.description}
                       category={element.category}
-                      popularity={element.popularity}
+                      popularity={element.popularity || 0}
                       difficulty={element.difficulty}
-                      scienceRating={element.science_rating}
+                      scienceRating={element.science_rating || 0}
                       time={element.time || "Не указано"}
                       frequency={element.frequency || "По необходимости"}
                       tags={Array.isArray(element.tags) ? element.tags : []}

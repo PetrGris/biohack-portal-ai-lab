@@ -14,6 +14,8 @@ interface ProtocolCardProps {
   forks: number;
   days: number;
   difficulty: "Легкая" | "Средняя" | "Сложная";
+  status?: string;
+  lastUpdated?: string;
   className?: string;
 }
 
@@ -27,6 +29,8 @@ const ProtocolCard = ({
   forks,
   days,
   difficulty,
+  status,
+  lastUpdated,
   className,
 }: ProtocolCardProps) => {
   const getDifficultyColor = (difficulty: string) => {
@@ -70,6 +74,18 @@ const ProtocolCard = ({
         <div className="text-xs text-muted-foreground mb-3">
           Автор: <span className="font-medium text-foreground">{author}</span>
         </div>
+
+        {status && (
+          <div className="text-xs text-muted-foreground mb-2">
+            Статус: <span className="font-medium text-foreground">{status}</span>
+          </div>
+        )}
+
+        {lastUpdated && (
+          <div className="text-xs text-muted-foreground mb-3">
+            Обновлен: <span className="font-medium text-foreground">{lastUpdated}</span>
+          </div>
+        )}
         
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <div className="flex items-center space-x-4">
